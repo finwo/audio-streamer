@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "build": "./esbuild.js"
+  },
+  "dependencies": {
+    "esbuild": "^0.17.17",
+    "esbuild-svelte": "^0.7.3",
+    "fast-glob": "^3.2.12",
+    "svelte-preprocess": "^5.0.3"
+  }
+}
