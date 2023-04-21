@@ -33,11 +33,18 @@ const config = {
 };
 
 const buildList = [];
-const styles    = [];
+const styles    = ['global.css'];
 
 esbuild
   .build(config)
   .then(() => {
+
+    for(const style of styles) {
+      fs.copyFileSync(
+        `./src/${style}`,
+        `${config.outdir}/${style}`
+      );
+    }
 
     for(const name of Object.keys(entryPoints)) {
       buildList.push(`${name}.js`);
@@ -54,7 +61,6 @@ esbuild
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>* { box-sizing: border-box; }</style>
     ${styles.map(name => `<link rel="stylesheet" href="${name}"/>`).join('\n    ')}
   </head>
   <body>
@@ -68,7 +74,6 @@ esbuild
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>* { box-sizing: border-box; }</style>
     ${styles.map(path => `<style type="text/css">${fs.readFileSync(`${config.outdir}/${path}`,'utf-8')}</style>`).join('\n    ')}
   </head>
   <body>

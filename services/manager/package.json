@@ -1,7 +1,7 @@
 {
   "scripts": {
     "build": "./esbuild.js",
-    "watch": "nodemon --watch src --ext ts,svelte --exec npm -- run build",
+    "watch": "nodemon --watch src --ext css,ts,svelte --exec npm -- run build",
     "browser": "reload --dir dist --browser",
     "dev": "concurrently \"npm run watch\" \"npm run browser\""
   },
