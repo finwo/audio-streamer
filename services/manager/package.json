@@ -1,11 +1,17 @@
 {
   "scripts": {
-    "build": "./esbuild.js"
+    "build": "./esbuild.js",
+    "watch": "nodemon --watch src --ext ts,svelte --exec npm -- run build",
+    "browser": "reload --dir dist --browser",
+    "dev": "concurrently \"npm run watch\" \"npm run browser\""
   },
   "dependencies": {
+    "concurrently": "^8.0.1",
     "esbuild": "^0.17.17",
     "esbuild-svelte": "^0.7.3",
     "fast-glob": "^3.2.12",
+    "nodemon": "^2.0.22",
+    "reload": "^3.2.1",
     "svelte-preprocess": "^5.0.3"
   }
 }
