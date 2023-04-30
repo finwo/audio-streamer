@@ -4,6 +4,7 @@ new App({
   target: document.body,
 });
 
+// Title counter
 let counter = 0;
 setInterval(async () => {
   // @ts-ignore It exists

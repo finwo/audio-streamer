@@ -9,6 +9,21 @@
   import SecurityPage  from './page/security.svelte';
 
   export let route = 'libraries';
+  export let dat   = null;
+
+  // Storage tester
+  (async () => {
+    if ('function' === typeof window.storage_get) {
+      const value = await storage_get('key');
+      dat = JSON.stringify(value);
+    }
+    if ('function' === typeof window.storage_set) {
+      await storage_set('key', {
+        pizza: 'calzone'
+      });
+    }
+  })();
+
 </script>
 
 <div id="layout">
@@ -32,7 +47,7 @@
   </main>
 
   <footer>
-    footer
+    footer {dat}
   </footer>
 </div>
 
