@@ -16,6 +16,9 @@
     <a on:click={() => route = 'devices'}>
       <span>Devices</span>
     </a>
+    <a on:click={() => route = 'security'}>
+      <span>Security</span>
+    </a>
   </div>
 </div>
 
@@ -49,6 +52,6 @@
   #menu > a > span {
     display: block;
     padding: 1rem 0;
-    border-top: solid 1px #EEE8;
+    border-top: solid 1px #FFF2;
   }
 </style>

@@ -10,6 +10,7 @@
     "esbuild": "^0.17.17",
     "esbuild-svelte": "^0.7.3",
     "fast-glob": "^3.2.12",
+    "lucide-svelte": "^0.171.0",
     "nodemon": "^2.0.22",
     "reload": "^3.2.1",
     "svelte-preprocess": "^5.0.3"

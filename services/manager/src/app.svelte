@@ -6,6 +6,7 @@
   import DevicesPage   from './page/devices.svelte';
   import LibrariesPage from './page/libraries.svelte';
   import PlaylistsPage from './page/playlists.svelte';
+  import SecurityPage  from './page/security.svelte';
 
   export let route = 'libraries';
 </script>
@@ -23,6 +24,8 @@
       <LibrariesPage/>
     {:else if route == "playlists"}
       <PlaylistsPage/>
+    {:else if route == "security"}
+      <SecurityPage/>
     {:else}
       4-oh-4
     {/if}
