@@ -1,9 +1,11 @@
+#include <dirent.h>
 #include <libgen.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <wordexp.h>
 
 #include "kgabis/parson.h"
 
@@ -11,6 +13,8 @@
 #include "storage.h"
 
 const char *relpath = "data.json";
+
+// ---[ Utility functions ]---
 
 // Origin: https://stackoverflow.com/a/2336245
 // Modified to support longer paths (including linux's limit of 4096)
@@ -39,6 +43,8 @@ void mkdirp(char *dir) {
   mkdir(tmp, S_IRWXU);
   free(tmp);
 }
+
+// ---[ JSON CONFIG ]---
 
 struct storage_ctx * storage_init(char *directory) {
   struct storage_ctx *ctx = malloc(sizeof(struct storage_ctx));
@@ -94,4 +100,53 @@ JSON_Status storage_del(struct storage_ctx *ctx, char *key) {
 
 void storage_close(struct storage_ctx *ctx) {
   // Nothing to do
+}
+
+// ---[ Library management ]---
+
+
+struct storage_dirlist * storage_readdir(char *path) {
+  struct storage_dirlist *result = NULL;
+  struct storage_dirlist *next   = NULL;
+  wordexp_t p;
+  char **entry;
+  int i;
+
+  // Intermediate path, so we use wordexp as listing tool
+  char *ipath = calloc(strlen(path) + 2 + 1, 1);
+  strcat(ipath, path);
+  strcat(ipath, "/*");
+
+  // Expand & store all results
+  wordexp(ipath, &p, WRDE_NOCMD);
+  entry = p.we_wordv;
+  for (i = 0; i < p.we_wordc; i++) {
+    next               = result;
+    result             = malloc(sizeof(struct storage_dirlist));
+    result->next       = next;
+    result->data       = malloc(sizeof(struct storage_dirent));
+    result->data->name = strdup(entry[i]);
+  }
+  wordfree(&p);
+  free(ipath);
+
+  return result;
+}
+
+void storage_dirlist_free(struct storage_dirlist *list) {
+  if (!list) return;
+
+  // Free data if set
+  if (list->data) {
+    if (list->data->name) {
+      free(list->data->name);
+    }
+    free(list->data);
+  }
+
+  // Free the next entry if set
+  if (list->next) storage_dirlist_free(list->next);
+
+  // Free itself
+  free(list);
 }

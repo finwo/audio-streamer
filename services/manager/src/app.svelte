@@ -13,17 +13,11 @@
 
   // Storage tester
   (async () => {
-    if ('function' === typeof window.storage_get) {
-      const value = await storage_get('key');
-      dat = JSON.stringify(value);
-    }
-    if ('function' === typeof window.storage_set) {
+    if ('function' === typeof window.storage_readdir) {
       try {
-        alert(JSON.stringify(await storage_set('key', {
-          pizza: 'calzone'
-        })));
+        dat = JSON.stringify(await storage_readdir('~/Music/NCS'));
       } catch(e) {
-        alert('ERR: ' + e.message);
+        alert('READ ERR: ' + e.message);
       }
     }
   })();

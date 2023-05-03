@@ -115,6 +115,41 @@ void fn_storage_del(const char *seq, const char *req, void *udata) {
   webview_return(ctx->w, seq, 0, "null");
 }
 
+void fn_storage_readdir(const char *seq, const char *req, void *udata) {
+  struct as_ctx *ctx = udata;
+  JSON_Value *jRoot = json_value_init_array();
+  JSON_Array *jArguments;
+  char *givenpath;
+
+  JSON_Value *jreq = json_parse_string(req);
+  if (json_value_get_type(jreq) != JSONArray) {
+    json_value_free(jreq);
+    json_value_free(jRoot);
+    webview_return(ctx->w, seq, 1, "new Error(\"Invalid bound call\")");
+    return;
+  }
+
+  jArguments = json_value_get_array(jreq);
+  givenpath  = json_array_get_string(jArguments, 0);
+
+  struct storage_dirlist *list = storage_readdir(givenpath);
+  struct storage_dirlist *entry = list;
+  while(entry) {
+    json_array_append_string(json_array(jRoot), entry->data->name);
+    entry = entry->next;
+  }
+  storage_dirlist_free(list);
+
+  char *serialized = json_serialize_to_string(jRoot);
+  webview_return(ctx->w, seq, 0, serialized);
+  json_free_serialized_string(serialized);
+
+  json_value_free(jreq);
+  json_value_free(jRoot);
+  return;
+
+}
+
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInt, HINSTANCE hPrevInst, LPSTR lpCmdLine,
                    int nCmdShow) {
@@ -140,10 +175,11 @@ int main() {
   webview_set_html(ctx->w, html);
 
   // Initialize bindings
-  webview_bind(ctx->w, "wv_title_set", fn_set_title, ctx);
-  webview_bind(ctx->w, "storage_get", fn_storage_get, ctx);
-  webview_bind(ctx->w, "storage_set", fn_storage_set, ctx);
-  webview_bind(ctx->w, "storage_del", fn_storage_del, ctx);
+  webview_bind(ctx->w, "wv_title_set"   , fn_set_title      , ctx);
+  webview_bind(ctx->w, "storage_get"    , fn_storage_get    , ctx);
+  webview_bind(ctx->w, "storage_set"    , fn_storage_set    , ctx);
+  webview_bind(ctx->w, "storage_del"    , fn_storage_del    , ctx);
+  webview_bind(ctx->w, "storage_readdir", fn_storage_readdir, ctx);
 
   // And start the thing
   webview_run(ctx->w);
