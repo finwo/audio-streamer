@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "kgabis/parson.h"
 #include "webview/webview.h"
@@ -42,7 +43,7 @@ void fn_storage_get(const char *seq, const char *req, void *udata) {
   struct as_ctx *ctx = udata;
   JSON_Array *jArguments;
   JSON_Value *value;
-  const char *key;
+  char *key;
   char *response;
 
   JSON_Value *jreq = json_parse_string(req);
@@ -71,7 +72,7 @@ void fn_storage_set(const char *seq, const char *req, void *udata) {
   JSON_Value *jreq = json_parse_string(req);
   if (json_value_get_type(jreq) != JSONArray) {
     json_value_free(jreq);
-    webview_return(ctx->w, seq, 0, "new Error(\"Invalid bound call\")");
+    webview_return(ctx->w, seq, 1, "new Error(\"Invalid bound call\")");
     return;
   }
 
@@ -79,7 +80,12 @@ void fn_storage_set(const char *seq, const char *req, void *udata) {
   key        = json_array_get_string(jArguments, 0);
   value      = json_array_get_value(jArguments, 1);
 
-  storage_set(ctx->storage_ctx, key, value);
+  if (storage_set(ctx->storage_ctx, key, value) < 0) {
+    json_value_free(jreq);
+    webview_return(ctx->w, seq, 1, "new Error(\"Unable to update storage\")");
+    return;
+  }
+
   json_value_free(jreq);
   webview_return(ctx->w, seq, 0, "null");
 }
@@ -99,7 +105,12 @@ void fn_storage_del(const char *seq, const char *req, void *udata) {
   jArguments = json_value_get_array(jreq);
   key        = json_array_get_string(jArguments, 0);
 
-  storage_del(ctx->storage_ctx, key);
+  if (storage_del(ctx->storage_ctx, key) < 0) {
+    json_value_free(jreq);
+    webview_return(ctx->w, seq, 1, "new Error(\"Unable to update storage\")");
+    return;
+  }
+
   json_value_free(jreq);
   webview_return(ctx->w, seq, 0, "null");
 }
@@ -111,9 +122,16 @@ int WINAPI WinMain(HINSTANCE hInt, HINSTANCE hPrevInst, LPSTR lpCmdLine,
 int main() {
 #endif
 
+
   // Initialize context we pass to bindings and such
   struct as_ctx *ctx = calloc(1, sizeof(struct as_ctx));
-  ctx->storage_ctx = storage_init("/tmp");
+
+  // Load up our main storage location
+  const char *storageLocationRelative = "/.config/finwo/audio-streamer";
+  char *storageLocation = calloc(strlen(getenv("HOME")) + strlen(storageLocationRelative) + 1, 1);
+  strcat(storageLocation, getenv("HOME"));
+  strcat(storageLocation, storageLocationRelative);
+  ctx->storage_ctx = storage_init(storageLocation);
 
   // Initialize the window
   ctx->w = webview_create(0, NULL);

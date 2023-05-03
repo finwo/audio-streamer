@@ -18,9 +18,13 @@
       dat = JSON.stringify(value);
     }
     if ('function' === typeof window.storage_set) {
-      await storage_set('key', {
-        pizza: 'calzone'
-      });
+      try {
+        alert(JSON.stringify(await storage_set('key', {
+          pizza: 'calzone'
+        })));
+      } catch(e) {
+        alert('ERR: ' + e.message);
+      }
     }
   })();
 
