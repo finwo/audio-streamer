@@ -1,7 +1,8 @@
-<script>
-  import { PlusSquare, Delete } from 'lucide-svelte';
+<script language="ts">
+  import { PlusSquare, Delete, File, Folder } from 'lucide-svelte';
 
   let currentPath = '~';
+  let directoryEntries = [];
 
   function closeDialogOnClick(el) {
     return e => {
@@ -9,16 +10,29 @@
     }
   }
 
+  function basename(path) {
+    return path.split('/').pop();
+  }
+
   function openAddDialog() {
     let currentPath = '~';
     addDialog.returnValue = null;
     addDialog.showModal();
+    storage_readdir(currentPath)
+      .then(entries => {
+        directoryEntries = entries
+          .map(entry => ({ ...entry, basename: basename(entry.name) }))
+          .filter(entry => entry.basename.substring(0,1) != '.')
+          .sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 0);
+        alert(JSON.stringify(directoryEntries, null, 2));
+      });
   }
 
   function handleAddDialog(event) {
     const type = event.target.returnValue;
     alert(JSON.stringify({ event, type }, null, 2));
   }
+
 </script>
 
 <div id=page>
@@ -51,9 +65,20 @@
     <div>
       Path: {currentPath}
     </div>
-    <div id=filebrowser>
-
-    </div>
+    <table id=filebrowser>
+      <thead>
+        <tr>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each directoryEntries as entry}
+          <tr>
+            <td>{#if entry.is_directory}<Folder/>{:else}<File/>{/if} {entry.basename}</td>
+          </tr>
+        {/each}
+    </tbody>
+    </table>
     <button type=submit value="cancel" >Cancel</button>
     <button type=submit value="confirm">Add</button>
   </form>

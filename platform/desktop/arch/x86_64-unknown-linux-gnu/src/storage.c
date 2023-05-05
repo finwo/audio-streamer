@@ -129,25 +129,24 @@ struct storage_dirlist * storage_readdir(char *path) {
     dp = opendir(entry[i]);
     while((dent = readdir(dp)) != NULL) {
 
-      // Build a new return entry
-      next               = result;
-      result             = malloc(sizeof(struct storage_dirlist));
-      result->next       = next;
-      result->data       = calloc(1, sizeof(struct storage_dirent));
-
       // Build the full name of the entry
       ipath = calloc(1, strlen(entry[i]) + 1 + strlen(dent->d_name) + 1);
       strcat(ipath, entry[i]);
       strcat(ipath, "/");
       strcat(ipath, dent->d_name);
-      result->data->name = ipath;
 
       // Stat, so we can populate our entry
       if (stat(ipath, &estat) < 0) {
-        perror("stat");
-        exit(1);
-        return NULL;
+        free(ipath);
+        continue;
       }
+
+      // Build a new return entry
+      next               = result;
+      result             = malloc(sizeof(struct storage_dirlist));
+      result->next       = next;
+      result->data       = calloc(1, sizeof(struct storage_dirent));
+      result->data->name = ipath;
 
       // Copy st_mode in a more transferrable way
       switch (estat.st_mode & S_IFMT) {
