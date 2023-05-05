@@ -1,6 +1,4 @@
 <script language="ts">
-  import * as theme from './config/theme';
-
   import SidebarComponent from './component/sidebar.svelte';
 
   import DevicesPage   from './page/devices.svelte';
@@ -31,13 +29,13 @@
   </aside>
 
   <main>
-    {#if route == "devices"}
+    {#if route == 'devices'}
       <DevicesPage/>
-    {:else if route == "libraries"}
+    {:else if route == 'libraries'}
       <LibrariesPage/>
-    {:else if route == "playlists"}
+    {:else if route == 'playlists'}
       <PlaylistsPage/>
-    {:else if route == "security"}
+    {:else if route == 'security'}
       <SecurityPage/>
     {:else}
       4-oh-4

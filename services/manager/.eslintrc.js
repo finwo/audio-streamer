@@ -5,11 +5,28 @@ module.exports = {
     'eslint:recommended',
   ],
   'env': {
-    'node'  : true,
-    'es2021': true,
+    'node'   : true,
+    'es2021' : true,
+    'browser': true,
   },
   'parserOptions': {
     'ecmaVersion': 'latest',
+  },
+  'plugins': [
+    'svelte3',
+  ],
+  'overrides': [
+    {
+      'files'    : ['**/*.svelte'],
+      'processor': 'svelte3/svelte3',
+    },
+  ],
+  'globals': {
+    'storage_readdir': 'readonly',
+    'storage_get'    : 'readonly',
+    'storage_set'    : 'readonly',
+    'storage_del'    : 'readonly',
+    'wv_title_set'   : 'readonly',
   },
   'rules': {
     'semi'        : ['error', 'always'],
