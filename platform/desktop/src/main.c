@@ -183,7 +183,7 @@ int main() {
   ctx->storage_ctx = storage_init(storageLocation);
 
   // Initialize the window
-  ctx->w = webview_create(0, NULL);
+  ctx->w = webview_create(1, NULL);
   webview_set_title(ctx->w, "Audio streamer");
   webview_set_size(ctx->w, 800, 600, WEBVIEW_HINT_NONE);
   webview_set_html(ctx->w, html);
