@@ -114,6 +114,7 @@ struct storage_dirlist * storage_readdir(char *path) {
   wordexp_t p;
   char **entry;
   char *ipath;
+  char *rpath;
   int i;
 
   DIR *dp;
@@ -134,19 +135,22 @@ struct storage_dirlist * storage_readdir(char *path) {
       strcat(ipath, entry[i]);
       strcat(ipath, "/");
       strcat(ipath, dent->d_name);
+      rpath = realpath(ipath, NULL);
+      free(ipath);
 
       // Stat, so we can populate our entry
-      if (stat(ipath, &estat) < 0) {
-        free(ipath);
+      if (stat(rpath, &estat) < 0) {
+        free(rpath);
         continue;
       }
 
       // Build a new return entry
-      next               = result;
-      result             = malloc(sizeof(struct storage_dirlist));
-      result->next       = next;
-      result->data       = calloc(1, sizeof(struct storage_dirent));
-      result->data->name = ipath;
+      next                   = result;
+      result                 = malloc(sizeof(struct storage_dirlist));
+      result->next           = next;
+      result->data           = calloc(1, sizeof(struct storage_dirent));
+      result->data->name     = strdup(dent->d_name);
+      result->data->fullpath = rpath;
 
       // Copy st_mode in a more transferrable way
       switch (estat.st_mode & S_IFMT) {
@@ -172,9 +176,8 @@ void storage_dirlist_free(struct storage_dirlist *list) {
 
   // Free data if set
   if (list->data) {
-    if (list->data->name) {
-      free(list->data->name);
-    }
+    if (list->data->name    ) free(list->data->name    );
+    if (list->data->fullpath) free(list->data->fullpath);
     free(list->data);
   }
 

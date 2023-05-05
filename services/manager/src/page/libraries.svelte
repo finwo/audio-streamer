@@ -1,5 +1,5 @@
 <script language="ts">
-  import { PlusSquare, Delete, File, Folder } from 'lucide-svelte';
+  import { PlusSquare, Delete, File, Folder, FolderUp } from 'lucide-svelte';
 
   let currentPath = '~';
   let directoryEntries = [];
@@ -10,27 +10,34 @@
     }
   }
 
-  function basename(path) {
-    return path.split('/').pop();
+  function updateDirectories() {
+    storage_readdir(currentPath)
+      .then(entries => {
+        console.log({ entries });
+        directoryEntries = entries
+          .filter(entry => ((entry.name == '..') || (entry.name.substring(0,1) != '.')))
+          .sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 0);
+      });
   }
 
   function openAddDialog() {
-    let currentPath = '~';
+    currentPath = '~';
     addDialog.returnValue = null;
     addDialog.showModal();
-    storage_readdir(currentPath)
-      .then(entries => {
-        directoryEntries = entries
-          .map(entry => ({ ...entry, basename: basename(entry.name) }))
-          .filter(entry => entry.basename.substring(0,1) != '.')
-          .sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 0);
-        alert(JSON.stringify(directoryEntries, null, 2));
-      });
+    updateDirectories();
   }
 
   function handleAddDialog(event) {
     const type = event.target.returnValue;
-    alert(JSON.stringify({ event, type }, null, 2));
+    // alert(JSON.stringify({ event, type }, null, 2));
+  }
+
+  function handleAddDialogNavigate(entry) {
+    return () => {
+      if (!entry.is_directory) return;
+      currentPath = entry.fullpath;
+      updateDirectories();
+    };
   }
 
 </script>
@@ -74,7 +81,7 @@
       <tbody>
         {#each directoryEntries as entry}
           <tr>
-            <td>{#if entry.is_directory}<Folder/>{:else}<File/>{/if} {entry.basename}</td>
+            <td><a on:click={handleAddDialogNavigate(entry)}>{#if entry.name == '..'}<FolderUp/>{:else if entry.is_directory}<Folder/>{:else}<File/>{/if} {entry.name}</a></td>
           </tr>
         {/each}
     </tbody>
@@ -94,13 +101,14 @@
     width: 40rem;
     margin: 0 auto;
   }
-  thead {
-    border-bottom: 1px solid #FFF2;
-  }
   th, td {
     text-align: left;
   }
   th.right, td.right {
     text-align: right;
+  }
+  #addDialog tbody td a {
+    display: block;
+    padding: 0.5em;
   }
 </style>

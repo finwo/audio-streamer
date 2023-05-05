@@ -38,12 +38,34 @@ button.btn-icon {
   padding: 0;
 }
 
+a {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+a:hover {
+  background: #FFF1;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+thead {
+  border-bottom: 1px solid #FFF2;
+}
+
+thead,
 header {
   font-weight: 700;
 }
 
+td {
+  padding: 0;
+}
+
 dialog {
-  background: #3c3836;
   border: none;
   border-radius: 0.5rem;
   padding: 1rem 2rem;
@@ -51,8 +73,19 @@ dialog {
 }
 
 dialog > header:first-child {
-  border-radius: 0.5rem 0.5rem 0 0;
   background: #504945;
+}
+
+dialog {
+  background: #3c3836;
+}
+
+tbody tr:nth-child(even) {
+  background: #FFF1;
+}
+
+dialog > header:first-child {
+  border-radius: 0.5rem 0.5rem 0 0;
   text-align: center;
   color: inherit;
   margin: -1rem -2rem 1rem -2rem;

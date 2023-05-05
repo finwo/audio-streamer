@@ -134,6 +134,13 @@ void fn_storage_readdir(const char *seq, const char *req, void *udata) {
   jArguments = json_value_get_array(jreq);
   givenpath  = json_array_get_string(jArguments, 0);
 
+  if (!givenpath) {
+    json_value_free(jreq);
+    json_value_free(jRoot);
+    webview_return(ctx->w, seq, 1, "new Error(\"Invalid given path\")");
+    return;
+  }
+
   struct storage_dirlist *list = storage_readdir(givenpath);
   struct storage_dirlist *entry = list;
   while(entry) {
@@ -141,6 +148,7 @@ void fn_storage_readdir(const char *seq, const char *req, void *udata) {
     jEntry       = json_value_init_object();
     jEntryObject = json_object(jEntry);
     json_object_set_string (jEntryObject, "name"               , entry->data->name               );
+    json_object_set_string (jEntryObject, "fullpath"           , entry->data->fullpath           );
     json_object_set_boolean(jEntryObject, "is_character_device", entry->data->is_character_device);
     json_object_set_boolean(jEntryObject, "is_block_device"    , entry->data->is_block_device    );
     json_object_set_boolean(jEntryObject, "is_directory"       , entry->data->is_directory       );
