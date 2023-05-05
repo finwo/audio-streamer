@@ -16,7 +16,13 @@ void                 storage_close(struct storage_ctx *ctx);
 
 struct storage_dirent {
   char *name;
+  int is_character_device;
+  int is_block_device;
   int is_directory;
+  int is_fifo;
+  int is_symlink;
+  int is_file;
+  int is_socket;
 };
 
 LLIST(struct storage_dirent, storage_dirlist);

@@ -118,6 +118,8 @@ void fn_storage_del(const char *seq, const char *req, void *udata) {
 void fn_storage_readdir(const char *seq, const char *req, void *udata) {
   struct as_ctx *ctx = udata;
   JSON_Value *jRoot = json_value_init_array();
+  JSON_Value *jEntry;
+  JSON_Object *jEntryObject;
   JSON_Array *jArguments;
   char *givenpath;
 
@@ -135,7 +137,19 @@ void fn_storage_readdir(const char *seq, const char *req, void *udata) {
   struct storage_dirlist *list = storage_readdir(givenpath);
   struct storage_dirlist *entry = list;
   while(entry) {
-    json_array_append_string(json_array(jRoot), entry->data->name);
+    // Build json object
+    jEntry       = json_value_init_object();
+    jEntryObject = json_object(jEntry);
+    json_object_set_string (jEntryObject, "name"               , entry->data->name               );
+    json_object_set_boolean(jEntryObject, "is_character_device", entry->data->is_character_device);
+    json_object_set_boolean(jEntryObject, "is_block_device"    , entry->data->is_block_device    );
+    json_object_set_boolean(jEntryObject, "is_directory"       , entry->data->is_directory       );
+    json_object_set_boolean(jEntryObject, "is_fifo"            , entry->data->is_fifo            );
+    json_object_set_boolean(jEntryObject, "is_symlink"         , entry->data->is_symlink         );
+    json_object_set_boolean(jEntryObject, "is_file"            , entry->data->is_file            );
+    json_object_set_boolean(jEntryObject, "is_socket"          , entry->data->is_socket          );
+    // And add it to the response
+    json_array_append_value(json_array(jRoot), jEntry);
     entry = entry->next;
   }
   storage_dirlist_free(list);

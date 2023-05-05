@@ -6,6 +6,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <wordexp.h>
+#include <sys/types.h>
+#include <stdint.h>
+#include <sys/sysmacros.h>
 
 #include "kgabis/parson.h"
 
@@ -110,25 +113,57 @@ struct storage_dirlist * storage_readdir(char *path) {
   struct storage_dirlist *next   = NULL;
   wordexp_t p;
   char **entry;
+  char *ipath;
   int i;
 
-  // Intermediate path, so we use wordexp as listing tool
-  char *ipath = calloc(strlen(path) + 2 + 1, 1);
-  strcat(ipath, path);
-  strcat(ipath, "/*");
+  DIR *dp;
+  struct dirent *dent;
+  struct stat   estat;
 
   // Expand & store all results
-  wordexp(ipath, &p, WRDE_NOCMD);
+  wordexp(path, &p, WRDE_NOCMD);
   entry = p.we_wordv;
   for (i = 0; i < p.we_wordc; i++) {
-    next               = result;
-    result             = malloc(sizeof(struct storage_dirlist));
-    result->next       = next;
-    result->data       = malloc(sizeof(struct storage_dirent));
-    result->data->name = strdup(entry[i]);
+
+    // Read the directory we expanded to
+    dp = opendir(entry[i]);
+    while((dent = readdir(dp)) != NULL) {
+
+      // Build a new return entry
+      next               = result;
+      result             = malloc(sizeof(struct storage_dirlist));
+      result->next       = next;
+      result->data       = calloc(1, sizeof(struct storage_dirent));
+
+      // Build the full name of the entry
+      ipath = calloc(1, strlen(entry[i]) + 1 + strlen(dent->d_name) + 1);
+      strcat(ipath, entry[i]);
+      strcat(ipath, "/");
+      strcat(ipath, dent->d_name);
+      result->data->name = ipath;
+
+      // Stat, so we can populate our entry
+      if (stat(ipath, &estat) < 0) {
+        perror("stat");
+        exit(1);
+        return NULL;
+      }
+
+      // Copy st_mode in a more transferrable way
+      switch (estat.st_mode & S_IFMT) {
+        case S_IFBLK:  result->data->is_block_device     = 1; break;
+        case S_IFCHR:  result->data->is_character_device = 1; break;
+        case S_IFDIR:  result->data->is_directory        = 1; break;
+        case S_IFIFO:  result->data->is_fifo             = 1; break;
+        case S_IFLNK:  result->data->is_symlink          = 1; break;
+        case S_IFREG:  result->data->is_file             = 1; break;
+        case S_IFSOCK: result->data->is_socket           = 1; break;
+        default:       /* intentionally empty */              break;
+      }
+    }
+    closedir(dp);
   }
   wordfree(&p);
-  free(ipath);
 
   return result;
 }
