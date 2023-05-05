@@ -11,6 +11,7 @@
 
   function openAddDialog() {
     let currentPath = '~';
+    addDialog.returnValue = null;
     addDialog.showModal();
   }
 
@@ -40,7 +41,6 @@
       </tr>
     </tbody>
   </table>
-  <button type=submit value="cancel" >Cancel</button>
 </div>
 
 <dialog id=addDialog on:click={closeDialogOnClick(addDialog)} on:close={handleAddDialog}>
