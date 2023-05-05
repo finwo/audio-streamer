@@ -8,18 +8,6 @@
 
   export let route = 'libraries';
   export let dat   = null;
-
-  // Storage tester
-  (async () => {
-    if ('function' === typeof window.storage_readdir) {
-      try {
-        dat = JSON.stringify(await storage_readdir('~/Music/NCS'));
-      } catch(e) {
-        alert('READ ERR: ' + e.message);
-      }
-    }
-  })();
-
 </script>
 
 <div id="layout">
@@ -43,7 +31,7 @@
   </main>
 
   <footer>
-    footer {dat}
+    footer
   </footer>
 </div>
 

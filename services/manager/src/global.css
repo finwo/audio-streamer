@@ -8,12 +8,59 @@ body {
   height: 100%;
   background-color: #282828;
   color: #EEE;
-  font-family: Helvetica, sans-serif;
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 500;
+  font-weight: 700;
   border-bottom: 1px solid #FFF2;
+}
+
+button {
+  background: #0006;
+  color: inherit;
+  padding: 0.5em 1em;
+  border: none;
+  border-radius: 0.25em;
+}
+
+button:hover {
+  background: #000;
+}
+
+button.btn-icon {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+header {
+  font-weight: 700;
+}
+
+dialog {
+  background: #3c3836;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 1rem 2rem;
+  color: inherit;
+}
+
+dialog > header:first-child {
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: #504945;
+  text-align: center;
+  color: inherit;
+  margin: -1rem -2rem 1rem -2rem;
+  padding: 0.5rem;
+}
+
+dialog::backdrop {
+  background-color: #0006;
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }

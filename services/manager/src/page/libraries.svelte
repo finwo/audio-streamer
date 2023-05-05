@@ -1,5 +1,23 @@
 <script>
   import { PlusSquare, Delete } from 'lucide-svelte';
+
+  let currentPath = '~';
+
+  function closeDialogOnClick(el) {
+    return e => {
+      if (e.target == el) el.close();
+    }
+  }
+
+  function openAddDialog() {
+    let currentPath = '~';
+    addDialog.showModal();
+  }
+
+  function handleAddDialog(event) {
+    const type = event.target.returnValue;
+    alert(JSON.stringify({ event, type }, null, 2));
+  }
 </script>
 
 <div id=page>
@@ -8,7 +26,7 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th class="right"><PlusSquare/></th>
+        <th class="right"><button class="btn-icon" on:click={openAddDialog}><PlusSquare/></button></th>
       </tr>
     </thead>
     <tbody>
@@ -22,7 +40,24 @@
       </tr>
     </tbody>
   </table>
+  <button type=submit value="cancel" >Cancel</button>
 </div>
+
+<dialog id=addDialog on:click={closeDialogOnClick(addDialog)} on:close={handleAddDialog}>
+  <header>
+    Select directory
+  </header>
+  <form method=dialog>
+    <div>
+      Path: {currentPath}
+    </div>
+    <div id=filebrowser>
+
+    </div>
+    <button type=submit value="cancel" >Cancel</button>
+    <button type=submit value="confirm">Add</button>
+  </form>
+</dialog>
 
 <style>
   #page {
