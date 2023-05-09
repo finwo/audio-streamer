@@ -15,7 +15,7 @@ const entryPoints = glob.sync('./src/*.ts')
         { [a.substr(6).substr(0,a.length - 9)]: __dirname + '/' + a } :
         { [a]: __dirname + `/node_modules/${a}.ts` }
     )
-  }), {})
+  }), {});
 
 const config = {
   format: 'cjs',

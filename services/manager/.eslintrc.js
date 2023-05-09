@@ -4,6 +4,9 @@ module.exports = {
   'extends': [
     'eslint:recommended',
   ],
+  'lib': [
+    'ES2015',
+  ],
   'env': {
     'node'   : true,
     'es2021' : true,
