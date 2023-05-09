@@ -1,7 +1,19 @@
 <script language="ts">
   import { PlusSquare, Delete, File, Folder, FolderUp } from 'lucide-svelte';
+  import { syncedObject } from '../util/storage';
 
-  let currentPath = '~';
+  let libDirectories = [];
+  const libraryConfig = syncedObject('library', async () => {
+    libDirectories = (await libraryConfig).directories;
+  });
+
+  // Housekeeping
+  (async () => {
+    if (!Array.isArray((await libraryConfig).directories)) (await libraryConfig).directories = [];
+    libDirectories = (await libraryConfig).directories;
+  })();
+
+  let currentPath      = '~';
   let directoryEntries = [];
 
   function closeDialogOnClick(el) {
@@ -26,11 +38,11 @@
     updateDirectories();
   }
 
-  function handleAddDialog(event) {
+  async function handleAddDialog(event) {
     const type = event.target.returnValue;
     if (type != 'confirm') return;
 
-    console.log(currentPath);
+    (await libraryConfig).directories.push(currentPath);
     // alert(JSON.stringify({ event, type }, null, 2));
   }
 
@@ -54,14 +66,12 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Portable HDD</td>
-        <td class="right"><Delete/></td>
-      </tr>
-      <tr>
-        <td>NAS</td>
-        <td class="right"><Delete/></td>
-      </tr>
+      {#each libDirectories as dir}
+        <tr>
+          <td>{dir}</td>
+          <td class="right"><Delete/></td>
+        </tr>
+      {/each}
     </tbody>
   </table>
 </div>

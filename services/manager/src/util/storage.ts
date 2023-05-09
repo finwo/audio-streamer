@@ -5,20 +5,37 @@ type StorageEntry = {
   [index:string]: StorageValue;
 } | StorageValue[];
 
-const cache: Record<string, any> = {};
+type CacheEntry = {
+  q: (()=>void)[],
+  data: any,
+};
 
-export async function syncedObject<T extends StorageEntry>(name: string): Promise<T> {
+const cache: Record<string, CacheEntry> = {};
+
+export async function syncedObject<T extends StorageEntry>(
+  name     : string,
+  callback : ()=>void = undefined
+): Promise<T> {
   // Return from cache if possible, so it's the exact same object everywhere
-  if (cache[name]) return cache[name];
+  if (cache[name]) {
+    if (callback) cache[name].q.push(callback);
+    return cache[name].data;
+  }
 
   // Bind cache object to actual storage
   // @ts-ignore storage_get is set by webview wrapper
   const org: T = await storage_get(name) || {};
-  const obs    = observer<T>(org, () => {
+  const obs    = observer<T>(org, async () => {
     // @ts-ignore storage_set is set by the webview wrapper
     storage_set(name, org);
+    for (const fn of cache[name].q) await fn();
   });
 
   // Return the newly constructed bound object
-  return cache[name] = obs;
+  cache[name] = {
+    q    : [callback].filter(f => f),
+    data : obs
+  };
+
+  return cache[name].data;
 }
