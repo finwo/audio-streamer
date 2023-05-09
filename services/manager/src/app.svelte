@@ -29,10 +29,6 @@
       4-oh-4
     {/if}
   </main>
-
-  <footer>
-    footer
-  </footer>
 </div>
 
 <style>
