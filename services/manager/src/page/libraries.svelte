@@ -13,8 +13,9 @@
     libDirectories = (await libraryConfig).directories;
   })();
 
-  let currentPath      = '~';
-  let directoryEntries = [];
+  let deleteDirectoryData = '';
+  let currentPath         = '~';
+  let directoryEntries    = [];
 
   function closeDialogOnClick(el) {
     return e => {
@@ -31,6 +32,21 @@
       });
   }
 
+  function openDeleteDialog(dir) {
+    deleteDirectoryData = dir;
+    return () => {
+      delDialog.returnValue = null;
+      delDialog.showModal();
+    };
+  }
+
+  async function handleDeleteDialog(event) {
+    const type = event.target.returnValue;
+    if (type != 'confirm') return;
+
+    (await libraryConfig).directories = (await libraryConfig).directories.filter(dirent => dirent !== deleteDirectoryData);
+  }
+
   function openAddDialog() {
     currentPath = '~';
     addDialog.returnValue = null;
@@ -41,9 +57,9 @@
   async function handleAddDialog(event) {
     const type = event.target.returnValue;
     if (type != 'confirm') return;
-
-    (await libraryConfig).directories.push(currentPath);
-    // alert(JSON.stringify({ event, type }, null, 2));
+    if (!(await libraryConfig).directories.includes(currentPath)) {
+      (await libraryConfig).directories.push(currentPath);
+    }
   }
 
   function handleAddDialogNavigate(entry) {
@@ -69,7 +85,7 @@
       {#each libDirectories as dir}
         <tr>
           <td>{dir}</td>
-          <td class="right"><Delete/></td>
+          <td class="right"><button class="btn-icon" on:click={openDeleteDialog(dir)}><Delete/></button></td>
         </tr>
       {/each}
     </tbody>
@@ -100,6 +116,20 @@
     </table>
     <button type=submit value="cancel" >Cancel</button>
     <button type=submit value="confirm">Add</button>
+  </form>
+</dialog>
+
+<dialog id=delDialog on:click={closeDialogOnClick(delDialog)} on:close={handleDeleteDialog}>
+  <header>
+    Delete library
+  </header>
+  <form method=dialog>
+    <div>
+      Are you sure you want to delete '{deleteDirectoryData}' from your libraries?
+      <br/><br/>
+    </div>
+    <button type=submit value="cancel"  class="btn-primary">Cancel</button>
+    <button type=submit value="confirm" class="btn-danger">Delete</button>
   </form>
 </dialog>
 

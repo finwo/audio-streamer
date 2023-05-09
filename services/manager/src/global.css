@@ -30,7 +30,29 @@ button:hover {
   background: #000;
 }
 
-button.btn-icon {
+.btn-icon {
+  background: none;
+  padding: 0;
+  border-radius: none;
+}
+
+.btn-primary {
+  background: #287728;
+}
+
+.btn-danger {
+  background: #DD3C28;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-icon {
   background: none;
   border: none;
   color: inherit;
