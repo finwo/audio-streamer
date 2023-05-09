@@ -13,7 +13,6 @@
   function updateDirectories() {
     storage_readdir(currentPath)
       .then(entries => {
-        console.log({ entries });
         directoryEntries = entries
           .filter(entry => ((entry.name == '..') || (entry.name.substring(0,1) != '.')))
           .sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : (a.name.toLowerCase() < b.name.toLowerCase()) ? -1 : 0);
@@ -29,6 +28,9 @@
 
   function handleAddDialog(event) {
     const type = event.target.returnValue;
+    if (type != 'confirm') return;
+
+    console.log(currentPath);
     // alert(JSON.stringify({ event, type }, null, 2));
   }
 

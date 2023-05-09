@@ -8,6 +8,7 @@
     "format": "npm run check -- --fix"
   },
   "dependencies": {
+    "@finwo/observer": "^1.0.1",
     "@typescript-eslint/parser": "^5.59.2",
     "concurrently": "^8.0.1",
     "esbuild": "^0.17.17",
