@@ -8,4 +8,6 @@ struct as_ctx {
   void *storage_ctx;
 };
 
+extern struct as_ctx *ctx;
+
 #endif // __FINWO_AS_COMMON_H__

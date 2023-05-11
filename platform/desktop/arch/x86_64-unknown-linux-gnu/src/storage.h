@@ -1,6 +1,8 @@
 #ifndef __FINWO_AS_STORAGE_H__
 #define __FINWO_AS_STORAGE_H__
 
+#include "kgabis/parson.h"
+
 #include "common.h"
 #include "linked-list.h"
 
