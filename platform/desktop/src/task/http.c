@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "linked-list.h"
 #include "finwo/http-parser.h"
 #include "tidwall/evio.h"
 
@@ -12,6 +13,40 @@ struct conn_udata {
   struct evio_conn *connection;
   struct http_parser_pair *reqres;
 };
+
+LLIST(struct evio_conn, llist_conns);
+struct llist_conns *listeners = NULL;
+
+void route_data_get(struct http_parser_event *ev) {
+  struct conn_udata *conndata = ev->udata;
+  struct llist_conns *listener = malloc(sizeof(struct llist_conns));
+
+  // Fetching the request
+  // Has been wrapped in http_parser_event to support more features in the future
+  struct http_parser_message *request  = ev->request;
+  struct http_parser_message *response = ev->response;
+  struct http_parser_header *header    = NULL;
+
+  // Build response
+  response->status = 200;
+  http_parser_header_set(response, "Transfer-Encoding", "chunked"             );
+  http_parser_header_set(response, "Content-Type"     , "application/x-ndjson");
+
+  response->body     = strdup("2\r\n{}\r\n");
+  response->bodysize = strlen(response->body);
+
+  // Write headers (data will come later)
+  char *response_buffer = http_parser_sprint_response(response);
+  evio_conn_write(conndata->connection, response_buffer, strlen(response_buffer));
+  free(response_buffer);
+
+  // Register the connection as a listener to send data to
+  listener->next = listeners;
+  listener->data = conndata->connection;
+  listeners      = listener;
+
+  // Intentionally NOT closing the connection
+}
 
 void serving(const char **addrs, int naddrs, void *udata) {
   for (int i = 0; i < naddrs; i++) {
@@ -39,22 +74,15 @@ static void onRequest(struct http_parser_event *ev) {
   // Has been wrapped in http_parser_event to support more features in the future
   struct http_parser_message *request  = ev->request;
   struct http_parser_message *response = ev->response;
-  struct http_parser_header *header    = NULL;
+
+  if (!(strcmp(request->method, "GET") || strcmp(request->path, "/api/v1/events"))) {
+    return route_data_get(ev);
+  }
 
   // Build response
   response->status = 200;
-
-  header = malloc(sizeof(struct http_parser_header));
-  header->next  = response->headers;
-  header->key   = strdup("Connection");
-  header->value = strdup("close");
-  response->headers = header;
-
-  header = malloc(sizeof(struct http_parser_header));
-  header->next  = response->headers;
-  header->key   = strdup("Content-Type");
-  header->value = strdup("text/plain");
-  response->headers = header;
+  http_parser_header_set(response, "Connection"  , "close"     );
+  http_parser_header_set(response, "Content-Type", "text/plain");
 
   response->body = calloc(1, 8192);
   strcat(response->body, "Method: ");
@@ -84,24 +112,20 @@ void opened(struct evio_conn *conn, void *udata) {
   conndata->reqres            = http_parser_pair_init(conndata);
   conndata->reqres->onRequest = onRequest;
   evio_conn_set_udata(conn, conndata);
-  printf("Connection opened!\n");
 }
 
 void closed(struct evio_conn *conn, void *udata) {
   struct conn_udata *conndata = evio_conn_udata(conn);
   http_parser_pair_free(conndata->reqres);
   free(conndata);
-  printf("Connection closed!\n");
 }
 
 void data(struct evio_conn *conn, const void *data, size_t len, void *udata) {
   struct conn_udata *conndata = evio_conn_udata(conn);
   http_parser_pair_request_data(conndata->reqres, data, len);
-  evio_conn_write(conn, data, len);
 }
 
 void * task_http(void *arg) {
-  printf("Hello from the http thread!\n");
 
   struct evio_events evs = {
     .serving = serving,
