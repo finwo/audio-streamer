@@ -1,10 +1,7 @@
 TARGET:=$(shell gcc -dumpmachine)
 BIN:=audio-streamer
 
-default: util/bin2c build/$(TARGET)/$(BIN)
-
-util/bin2c:
-	$(CC) $@.c -o $@
+default: build/$(TARGET)/$(BIN)
 
 build/$(TARGET)/Makefile: arch/$(TARGET) build/$(TARGET)/src build/$(TARGET)/lib
 	mkdir -p build/$(TARGET)
@@ -26,4 +23,3 @@ build/$(TARGET)/$(BIN): build/$(TARGET)/Makefile
 .PHONY: clean
 clean:
 	rm -rf build
-	rm -rf util/bin2c

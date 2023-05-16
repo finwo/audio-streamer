@@ -12,13 +12,11 @@
 
 #include "task/http.h"
 
+#include "../docroot/manager.h"
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
-
-static const char html[] = {
-#include "../docroot/manager.h"
-};
 
 struct as_ctx *ctx = NULL;
 
@@ -48,7 +46,7 @@ int main() {
   ctx->w = webview_create(1, NULL);
   webview_set_title(ctx->w, "Audio streamer");
   webview_set_size(ctx->w, 800, 600, WEBVIEW_HINT_NONE);
-  webview_set_html(ctx->w, html);
+  webview_set_html(ctx->w, doc_manager);
 
   // Initialize bindings
   struct bound_fn_llist *bound_fn = bound_fns;

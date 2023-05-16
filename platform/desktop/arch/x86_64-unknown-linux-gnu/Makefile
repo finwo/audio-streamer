@@ -20,11 +20,20 @@ override CFLAGS+=$(INCLUDES)
 override CPPFLAGS=`pkg-config --cflags --libs gtk+-3.0 webkit2gtk-4.0`
 override LDFLAGS+=`pkg-config --libs gtk+-3.0 webkit2gtk-4.0`
 
+DOCS:=
+DOCS+=manager
+DOCS+=player
+
 default: $(BIN)
 
 docroot:
 	mkdir -p docroot
-	../../util/bin2c < ../../../../services/manager/dist/index.bundled.html > docroot/manager.h
+	for doc in $(DOCS); do \
+		echo "#ifndef __FINWO_AS_DOC_$$(echo $${doc} | tr 'a-z' 'A-Z')_H__"          >  docroot/$${doc}.h ; \
+		echo "#define __FINWO_AS_DOC_$$(echo $${doc} | tr 'a-z' 'A-Z')_H__"          >> docroot/$${doc}.h ; \
+		xxd -i -n "doc_$${doc}" ../../../../services/$${doc}/dist/index.bundled.html >> docroot/$${doc}.h ; \
+		echo "#endif // __FINWO_AS_DOC_$$(echo $${doc} | tr 'a-z' 'A-Z')_H__"        >> docroot/$${doc}.h ; \
+	done
 
 $(OBJ): docroot
 
