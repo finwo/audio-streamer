@@ -25,6 +25,7 @@ module.exports = {
     },
   ],
   'globals': {
+    'http_port'      : 'readonly',
     'storage_readdir': 'readonly',
     'storage_get'    : 'readonly',
     'storage_set'    : 'readonly',

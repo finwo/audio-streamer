@@ -246,6 +246,7 @@ void * task_http(void *arg) {
 
   // Run the application. This is a forever operation.
   evio_main(addrs, sizeof(addrs) / sizeof(void*), evs, NULL);
+  free(addr);
 
   // Exit without error
   return NULL;

@@ -2,6 +2,7 @@
 #include "webview/webview.h"
 
 #include "bound.h"
+#include "task/http.h"
 #include "storage.h"
 
 struct bound_fn_llist *bound_fns = NULL;
@@ -161,6 +162,14 @@ void fn_storage_readdir(const char *seq, const char *req, void *udata) {
 
 }
 
+void fn_http_port(const char *seq, const char *req, void *udata) {
+  char *serialized;
+  asprintf(&serialized, "%d", http_port);
+  webview_return(ctx->w, seq, 0, serialized);
+  free(serialized);
+  return;
+}
+
 void bind_fn(
   char *name,
   void (*fn)(const char *seq, const char *req, void *arg)
@@ -179,4 +188,5 @@ void __attribute__ ((constructor)) register_bound_functions() {
   bind_fn("storage_set"     , fn_storage_set    );
   bind_fn("storage_del"     , fn_storage_del    );
   bind_fn("storage_readdir" , fn_storage_readdir);
+  bind_fn("http_port"       , fn_http_port      );
 }

@@ -18,4 +18,7 @@ new App({
       guiConfig.runtime = counter;
     }
   }, 1000);
+
+  const iPort = await http_port();
+  console.log(`port: ${iPort}`);
 })();
