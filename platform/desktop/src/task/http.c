@@ -10,6 +10,8 @@
 #include "linked-list.h"
 #include "http.h"
 
+int http_port = 4000;
+
 struct conn_udata {
   struct evio_conn *connection;
   struct http_parser_pair *reqres;
@@ -219,6 +221,10 @@ void onData(struct evio_conn *conn, const void *data, size_t len, void *udata) {
 }
 
 void * task_http(void *arg) {
+  char *aport = getenv("PORT");
+  char *aaddr = getenv("ADDR");
+  if (aport) http_port = atoi(aport);
+  if (!aaddr) aaddr    = "localhost";
 
   struct evio_events evs = {
     .serving = onServing,
@@ -234,9 +240,9 @@ void * task_http(void *arg) {
   // unix socket file named "socket".
   // For ipv4 only use an ip address like tcp://127.0.0.1:8080
   // For ipv6 use something like tcp://[::1]:8080
-  const char *addrs[] = {
-    "tcp://localhost:8080",
-  };
+  char *addr;
+  asprintf(&addr, "tcp://%s:%d", aaddr, http_port);
+  const char *addrs[] = { addr };
 
   // Run the application. This is a forever operation.
   evio_main(addrs, sizeof(addrs) / sizeof(void*), evs, NULL);
