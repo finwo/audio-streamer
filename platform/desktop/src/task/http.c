@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "linked-list.h"
 #include "finwo/http-parser.h"
 #include "tidwall/evio.h"
+#include "kgabis/parson.h"
 
+#include "linked-list.h"
 #include "http.h"
 
 struct conn_udata {
@@ -17,7 +18,76 @@ struct conn_udata {
 LLIST(struct evio_conn, llist_conns);
 struct llist_conns *listeners = NULL;
 
-void route_data_get(struct http_parser_event *ev) {
+void route_post_events(struct http_parser_event *ev) {
+  struct conn_udata *conndata = ev->udata;
+  struct llist_conns *listener;
+  struct llist_conns *prev_listener = NULL;
+  char *response_buffer;
+  char *event_buffer;
+  char *event_tmp;
+  int listener_count = 0;
+
+  // Fetching the request
+  // Has been wrapped in http_parser_event to support more features in the future
+  struct http_parser_message *request  = ev->request;
+  struct http_parser_message *response = ev->response;
+  struct http_parser_header *header    = NULL;
+
+  // Parse and validate the body
+  JSON_Value *jEvent = json_parse_string(request->body);
+  if (json_value_get_type(jEvent) != JSONObject) {
+    json_value_free(jEvent);
+
+    // Send error in return
+    response->status = 422;
+    http_parser_header_set(response, "Content-Type", "application/json");
+    response->body     = strdup("{\"ok\":false,\"message\":\"Only JSON objects are allowed\"}");
+    response->bodysize = strlen(response->body);
+    response_buffer    = http_parser_sprint_response(response);
+    evio_conn_write(conndata->connection, response_buffer, strlen(response_buffer));
+    free(response_buffer);
+    evio_conn_close(conndata->connection);
+    return;
+  }
+
+  // Here = valid json object, we need to propagate the event to all listeners
+
+  // Pre-render json to distribute
+  event_tmp = json_serialize_to_string(jEvent);
+  asprintf(&event_buffer, "%x\r\n%s\n\r\n", strlen(event_tmp) + 1, event_tmp);
+  json_value_free(jEvent);
+  free(event_tmp);
+
+  // Dsitribute
+  listener = listeners;
+  while(listener) {
+    listener_count++;
+    evio_conn_write(listener->data, event_buffer, strlen(event_buffer));
+    prev_listener = listener;
+    listener      = listener->next;
+  }
+
+  printf("Listener count: %d\n", listener_count);
+
+  // Clean up event
+  free(event_buffer);
+
+  // Build response
+  response->status = 200;
+  http_parser_header_set(response, "Content-Type", "application/json");
+  response->body     = strdup("{\"ok\":true}");
+  response->bodysize = strlen(response->body);
+
+  // Send response
+  response_buffer = http_parser_sprint_response(response);
+  evio_conn_write(conndata->connection, response_buffer, strlen(response_buffer));
+  free(response_buffer);
+
+  // Aanndd.. we're done
+  evio_conn_close(conndata->connection);
+}
+
+void route_get_events(struct http_parser_event *ev) {
   struct conn_udata *conndata = ev->udata;
   struct llist_conns *listener = malloc(sizeof(struct llist_conns));
 
@@ -32,7 +102,7 @@ void route_data_get(struct http_parser_event *ev) {
   http_parser_header_set(response, "Transfer-Encoding", "chunked"             );
   http_parser_header_set(response, "Content-Type"     , "application/x-ndjson");
 
-  response->body     = strdup("2\r\n{}\r\n");
+  response->body     = strdup("3\r\n{}\n\r\n");
   response->bodysize = strlen(response->body);
 
   // Write headers (data will come later)
@@ -48,17 +118,17 @@ void route_data_get(struct http_parser_event *ev) {
   // Intentionally NOT closing the connection
 }
 
-void serving(const char **addrs, int naddrs, void *udata) {
+void onServing(const char **addrs, int naddrs, void *udata) {
   for (int i = 0; i < naddrs; i++) {
     printf("Serving at %s\n", addrs[i]);
   }
 }
 
-void error(const char *msg, bool fatal, void *udata) {
+void onError(const char *msg, bool fatal, void *udata) {
   fprintf(stderr, "%s\n", msg);
 }
 
-int64_t tick(void *udata) {
+int64_t onTick(void *udata) {
   /* printf("Tick\n"); */
   // next tick in 1 second. This can be any duration in nanoseconds.
   return 1e9;
@@ -76,7 +146,11 @@ static void onRequest(struct http_parser_event *ev) {
   struct http_parser_message *response = ev->response;
 
   if (!(strcmp(request->method, "GET") || strcmp(request->path, "/api/v1/events"))) {
-    return route_data_get(ev);
+    return route_get_events(ev);
+  }
+
+  if (!(strcmp(request->method, "POST") || strcmp(request->path, "/api/v1/events"))) {
+    return route_post_events(ev);
   }
 
   // Build response
@@ -106,7 +180,7 @@ static void onRequest(struct http_parser_event *ev) {
 }
 
 
-void opened(struct evio_conn *conn, void *udata) {
+void onOpen(struct evio_conn *conn, void *udata) {
   struct conn_udata *conndata = malloc(sizeof(struct conn_udata));
   conndata->connection        = conn;
   conndata->reqres            = http_parser_pair_init(conndata);
@@ -114,13 +188,32 @@ void opened(struct evio_conn *conn, void *udata) {
   evio_conn_set_udata(conn, conndata);
 }
 
-void closed(struct evio_conn *conn, void *udata) {
-  struct conn_udata *conndata = evio_conn_udata(conn);
+void onClose(struct evio_conn *conn, void *udata) {
+
+  // Remove the connection from the listeners (if it's there)
+  struct conn_udata *conndata       = evio_conn_udata(conn);
+  struct llist_conns *listener      = listeners;
+  struct llist_conns *prev_listener = NULL;
+  while(listener) {
+    if (listener->data == conn) {
+      if (prev_listener) {
+        prev_listener->next = listener->next;
+      } else {
+        listeners = listener->next;
+      }
+      free(listener);
+      break;
+    }
+    prev_listener = listener;
+    listener      = listener->next;
+  }
+
+  // Free per-connection data
   http_parser_pair_free(conndata->reqres);
   free(conndata);
 }
 
-void data(struct evio_conn *conn, const void *data, size_t len, void *udata) {
+void onData(struct evio_conn *conn, const void *data, size_t len, void *udata) {
   struct conn_udata *conndata = evio_conn_udata(conn);
   http_parser_pair_request_data(conndata->reqres, data, len);
 }
@@ -128,12 +221,12 @@ void data(struct evio_conn *conn, const void *data, size_t len, void *udata) {
 void * task_http(void *arg) {
 
   struct evio_events evs = {
-    .serving = serving,
-    .error   = error,
+    .serving = onServing,
+    .error   = onError,
     .tick    = NULL,
-    .opened  = opened,
-    .closed  = closed,
-    .data    = data,
+    .opened  = onOpen,
+    .closed  = onClose,
+    .data    = onData,
   };
 
   // Any number of addresses can be bound to the appliation.
